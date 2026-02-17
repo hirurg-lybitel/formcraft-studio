@@ -43,8 +43,13 @@ export function FormPreview({ form, allForms = [] }: Props) {
 
   const handleOpenForm = useCallback((e: Event) => {
     const detail = (e as CustomEvent).detail;
-    const target = allForms.find(f => f.name === detail.formName);
-    if (!target) return;
+    const formName = detail.formName;
+    // Search in allForms and also check the current form itself
+    const target = allForms.find(f => f.name === formName);
+    if (!target) {
+      alert(`Форма "${formName}" не найдена. Убедитесь, что она сохранена в редакторе.`);
+      return;
+    }
     if (detail.mode === 'replace') {
       setReplacedForm(target);
     } else {

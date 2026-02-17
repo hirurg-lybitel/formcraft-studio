@@ -24,6 +24,7 @@ const Index = () => {
       {store.currentForm ? (
         <FormEditor
           form={store.currentForm}
+          allForms={store.savedForms}
           onChange={store.setCurrentForm}
           onSave={store.saveForm}
           onBack={store.goHome}
@@ -34,7 +35,7 @@ const Index = () => {
             <h2 className="text-sm font-semibold text-foreground">{viewingForm.name}</h2>
           </div>
           <div className="flex-1 overflow-auto bg-canvas">
-            <FormPreview form={viewingForm} />
+            <FormPreview form={viewingForm} allForms={store.savedForms} />
           </div>
         </div>
       ) : (

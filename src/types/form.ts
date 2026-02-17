@@ -23,8 +23,9 @@ export interface ComponentStyle {
 
 export interface ComponentAction {
   targetName: string;
-  action: 'setText' | 'setColor' | 'setBgColor' | 'hide' | 'show' | 'toggleVisibility';
+  action: 'setText' | 'setColor' | 'setBgColor' | 'hide' | 'show' | 'toggleVisibility' | 'openForm' | 'closeForm';
   value?: string;
+  openMode?: 'modal' | 'replace';
 }
 
 export interface FormComponent {
@@ -34,6 +35,7 @@ export interface FormComponent {
   props: Record<string, any>;
   style?: ComponentStyle;
   colSpan?: number; // 1-12
+  colStart?: number; // 1-12, starting column position
   actions?: ComponentAction[];
 }
 
@@ -45,6 +47,7 @@ export interface FormData {
   customCss: string;
   customJs: string;
   mode: 'visual' | 'code';
+  background?: { color?: string; image?: string };
   createdAt: number;
   updatedAt: number;
 }

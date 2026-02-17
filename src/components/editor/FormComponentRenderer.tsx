@@ -190,6 +190,35 @@ export function FormComponentRenderer({ component, interactive = false }: Props)
         </button>
       );
     }
+    case 'table': {
+      const columns = props.columns || [];
+      const rows = props.rows || [];
+      return (
+        <div data-name={name} className="overflow-auto" style={inlineStyle}>
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr>
+                {columns.map((col: any, i: number) => (
+                  <th key={i} className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground bg-secondary border border-border">{col.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row: any, ri: number) => (
+                <tr key={ri} className="hover:bg-secondary/50">
+                  {columns.map((col: any, ci: number) => (
+                    <td key={ci} className="px-3 py-2 border border-border text-foreground">{row[col.key] ?? ''}</td>
+                  ))}
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr><td colSpan={columns.length} className="px-3 py-4 text-center text-muted-foreground border border-border">Нет данных</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
     case 'divider':
       return <hr data-name={name} className="border-border" style={inlineStyle} />;
     default:

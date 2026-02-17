@@ -10,7 +10,8 @@ export type ComponentType =
   | 'divider'
   | 'date-picker'
   | 'image'
-  | 'data-select';
+  | 'data-select'
+  | 'table';
 
 export interface ComponentStyle {
   color?: string;

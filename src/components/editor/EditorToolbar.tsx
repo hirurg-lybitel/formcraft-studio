@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormData } from '@/types/form';
-import { Save, Eye, Code, Layout, ArrowLeft, Palette } from 'lucide-react';
+import { Save, Eye, Code, Layout, ArrowLeft, Palette, Undo2, Redo2 } from 'lucide-react';
 
 interface Props {
   form: FormData;
@@ -9,9 +9,13 @@ interface Props {
   onBack: () => void;
   previewOpen: boolean;
   onTogglePreview: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
 }
 
-export function EditorToolbar({ form, onChange, onSave, onBack, previewOpen, onTogglePreview }: Props) {
+export function EditorToolbar({ form, onChange, onSave, onBack, previewOpen, onTogglePreview, canUndo, canRedo, onUndo, onRedo }: Props) {
   const isCode = form.mode === 'code';
   const [showBg, setShowBg] = useState(false);
 
@@ -19,7 +23,7 @@ export function EditorToolbar({ form, onChange, onSave, onBack, previewOpen, onT
 
   return (
     <div className="h-12 border-b border-border bg-editor-surface flex items-center px-3 gap-2 relative">
-      <button onClick={onBack} className="p-2 rounded hover:bg-editor-hover text-muted-foreground hover:text-foreground transition-colors">
+      <button onClick={onBack} className="p-2 rounded hover:bg-editor-hover text-muted-foreground hover:text-foreground transition-colors" title="Назад">
         <ArrowLeft className="h-4 w-4" />
       </button>
 
@@ -29,6 +33,26 @@ export function EditorToolbar({ form, onChange, onSave, onBack, previewOpen, onT
         className="bg-transparent border-none text-foreground font-medium text-sm focus:outline-none
                    px-2 py-1 rounded hover:bg-editor-hover focus:bg-editor-hover w-48"
       />
+
+      {/* Undo / Redo */}
+      <div className="flex items-center gap-0.5 ml-1">
+        <button
+          onClick={onUndo}
+          disabled={!canUndo}
+          className="p-1.5 rounded transition-colors text-muted-foreground hover:text-foreground hover:bg-editor-hover disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Отменить (Undo)"
+        >
+          <Undo2 className="h-4 w-4" />
+        </button>
+        <button
+          onClick={onRedo}
+          disabled={!canRedo}
+          className="p-1.5 rounded transition-colors text-muted-foreground hover:text-foreground hover:bg-editor-hover disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Повторить (Redo)"
+        >
+          <Redo2 className="h-4 w-4" />
+        </button>
+      </div>
 
       <button
         onClick={() => setShowBg(!showBg)}

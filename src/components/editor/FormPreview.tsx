@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { FormData } from '@/types/form';
 import { FormComponentRenderer } from './FormComponentRenderer';
+import { PreviewRuntimeProvider } from './PreviewRuntimeContext';
 import { X } from 'lucide-react';
 
 interface Props {
@@ -44,7 +45,6 @@ export function FormPreview({ form, allForms = [] }: Props) {
   const handleOpenForm = useCallback((e: Event) => {
     const detail = (e as CustomEvent).detail;
     const formName = detail.formName;
-    // Search in allForms and also check the current form itself
     const target = allForms.find(f => f.name === formName);
     if (!target) {
       alert(`Форма "${formName}" не найдена. Убедитесь, что она сохранена в редакторе.`);
@@ -101,31 +101,33 @@ ${form.customCss || ''}
   const activeForm = replacedForm || form;
 
   return (
-    <div className="relative h-full">
-      <FormContent form={activeForm} />
+    <PreviewRuntimeProvider>
+      <div className="relative h-full">
+        <FormContent form={activeForm} />
 
-      {replacedForm && (
-        <button
-          onClick={() => setReplacedForm(null)}
-          className="fixed top-4 left-4 z-50 px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-xs font-medium hover:bg-editor-hover"
-        >
-          ← Назад
-        </button>
-      )}
+        {replacedForm && (
+          <button
+            onClick={() => setReplacedForm(null)}
+            className="fixed top-4 left-4 z-50 px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-xs font-medium hover:bg-editor-hover"
+          >
+            ← Назад
+          </button>
+        )}
 
-      {modalForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-2xl max-h-[85vh] overflow-auto bg-card rounded-xl border border-border shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-              <h3 className="text-sm font-semibold text-foreground">{modalForm.name}</h3>
-              <button onClick={() => setModalForm(null)} className="text-muted-foreground hover:text-foreground">
-                <X className="h-4 w-4" />
-              </button>
+        {modalForm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="relative w-full max-w-2xl max-h-[85vh] overflow-auto bg-card rounded-xl border border-border shadow-2xl">
+              <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-border bg-card">
+                <h3 className="text-sm font-semibold text-foreground">{modalForm.name}</h3>
+                <button onClick={() => setModalForm(null)} className="text-muted-foreground hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <FormContent form={modalForm} />
             </div>
-            <FormContent form={modalForm} />
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </PreviewRuntimeProvider>
   );
 }

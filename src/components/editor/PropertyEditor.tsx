@@ -19,6 +19,7 @@ const ACTION_LABELS: Record<string, string> = {
   toggleVisibility: 'Переключить видимость',
   openForm: 'Открыть форму',
   closeForm: 'Закрыть форму',
+  setVariable: 'Установить переменную',
 };
 
 export function PropertyEditor({ component, allComponents, allFormNames = [], onChange, onClose }: Props) {
@@ -92,6 +93,7 @@ export function PropertyEditor({ component, allComponents, allFormNames = [], on
           <div className="space-y-1">
             <label className={labelClass}>Текст</label>
             <textarea value={props.text || ''} onChange={e => updateProp('text', e.target.value)} rows={2} className={fieldClass} />
+            <p className="text-[10px] text-muted-foreground">Используйте {'{{имяПеременной}}'} для динамических данных, например {'{{cartTotal}}'}</p>
           </div>
         )}
         {type === 'heading' && (
@@ -196,6 +198,18 @@ export function PropertyEditor({ component, allComponents, allFormNames = [], on
                 className={fieldClass + ' font-mono text-xs'}
                 placeholder='[{"col1":"Значение"}]'
               />
+            </div>
+            <div className="space-y-1">
+              <label className={labelClass}>Фильтровать по переменной</label>
+              <input value={props.filterBy || ''} onChange={e => updateProp('filterBy', e.target.value)} placeholder="имя переменной (напр. searchField)" className={fieldClass + ' text-xs'} />
+              <p className="text-[10px] text-muted-foreground">Имя text-input, по которому фильтровать строки</p>
+            </div>
+            <div className="space-y-1">
+              <label className={labelClass}>Источник данных (переменная)</label>
+              <select value={props.dataSourceVar || ''} onChange={e => updateProp('dataSourceVar', e.target.value)} className={fieldClass + ' text-xs'}>
+                <option value="">Статические данные</option>
+                <option value="cart">Корзина (cart)</option>
+              </select>
             </div>
           </>
         )}
@@ -302,7 +316,22 @@ export function PropertyEditor({ component, allComponents, allFormNames = [], on
                         <option value="replace">Заменить экран</option>
                       </select>
                     </>
-                  ) : act.action === 'closeForm' ? null : (
+                  ) : act.action === 'closeForm' ? null : act.action === 'setVariable' ? (
+                    <>
+                      <input
+                        value={act.targetName || ''}
+                        onChange={e => updateAction(idx, { targetName: e.target.value })}
+                        placeholder="Имя переменной"
+                        className={fieldClass + ' text-xs font-mono'}
+                      />
+                      <input
+                        value={act.value || ''}
+                        onChange={e => updateAction(idx, { value: e.target.value })}
+                        placeholder="Значение"
+                        className={fieldClass + ' text-xs'}
+                      />
+                    </>
+                  ) : (
                     <>
                       <select
                         value={act.targetName}

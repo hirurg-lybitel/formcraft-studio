@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { FormComponent, ComponentStyle, ComponentAction } from '@/types/form';
 import { mockDataSources } from '@/data/mockData';
 import { usePreviewRuntime } from './PreviewRuntimeContext';
@@ -20,7 +19,7 @@ function buildInlineStyle(style?: ComponentStyle): React.CSSProperties {
   return s;
 }
 
-function executeActions(actions: ComponentAction[]) {
+function executeActions(actions: ComponentAction[], runtime: ReturnType<typeof usePreviewRuntime>) {
   actions.forEach(act => {
     if (act.action === 'openForm') {
       window.dispatchEvent(new CustomEvent('form:openForm', {
@@ -30,6 +29,10 @@ function executeActions(actions: ComponentAction[]) {
     }
     if (act.action === 'closeForm') {
       window.dispatchEvent(new CustomEvent('form:closeForm'));
+      return;
+    }
+    if (act.action === 'setVariable' && runtime) {
+      runtime.setVariable(act.targetName, act.value || '');
       return;
     }
     const target = document.querySelector(`[data-name="${act.targetName}"]`) as HTMLElement;
@@ -68,16 +71,20 @@ export function FormComponentRenderer({ component, interactive = false }: Props)
   const inlineStyle = buildInlineStyle(style);
   const runtime = usePreviewRuntime();
 
+  /** Resolve {{var}} in text if in interactive mode */
+  const resolve = (text: string | undefined): string => {
+    if (!text) return '';
+    if (interactive && runtime) return runtime.interpolate(text);
+    return text;
+  };
+
   switch (type) {
     case 'heading': {
       const Tag = (props.level || 'h2') as keyof JSX.IntrinsicElements;
-      // Dynamic total display for known kiosk components
-      const isDynamicTotal = interactive && runtime && (name === 'totalAmount' || name === 'payTotal');
-      const displayText = isDynamicTotal ? `${runtime.cartTotal} ₽` : props.text;
-      return <Tag data-name={name} className="text-xl font-bold text-foreground" style={inlineStyle}>{displayText}</Tag>;
+      return <Tag data-name={name} className="text-xl font-bold text-foreground" style={inlineStyle}>{resolve(props.text)}</Tag>;
     }
     case 'paragraph':
-      return <p data-name={name} className="text-sm text-muted-foreground" style={inlineStyle}>{props.text}</p>;
+      return <p data-name={name} className="text-sm text-muted-foreground" style={inlineStyle}>{resolve(props.text)}</p>;
     case 'text-input':
       return <TextInputRenderer name={name} props={props} style={inlineStyle} interactive={interactive} />;
     case 'textarea':
@@ -94,56 +101,11 @@ export function FormComponentRenderer({ component, interactive = false }: Props)
         </div>
       );
     case 'number-input':
-      return (
-        <div data-name={name} className="space-y-1" style={inlineStyle}>
-          <label className="text-sm font-medium text-foreground">{props.label}</label>
-          <input
-            type="number"
-            placeholder={props.placeholder}
-            min={props.min}
-            max={props.max}
-            readOnly={!interactive}
-            className="w-full px-3 py-2 rounded-md bg-secondary border border-border text-foreground
-                       placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-      );
+      return <NumberInputRenderer name={name} props={props} style={inlineStyle} interactive={interactive} />;
     case 'select':
-      return (
-        <div data-name={name} className="space-y-1" style={inlineStyle}>
-          <label className="text-sm font-medium text-foreground">{props.label}</label>
-          <select
-            disabled={!interactive}
-            className="w-full px-3 py-2 rounded-md bg-secondary border border-border text-foreground text-sm
-                       focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="">Выберите...</option>
-            {(props.options || []).map((opt: string) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
-      );
-    case 'data-select': {
-      const source = mockDataSources[props.dataSource];
-      const items = source ? source.items : [];
-      return (
-        <div data-name={name} className="space-y-1" style={inlineStyle}>
-          <label className="text-sm font-medium text-foreground">{props.label}</label>
-          <select
-            disabled={!interactive}
-            className="w-full px-3 py-2 rounded-md bg-secondary border border-border text-foreground text-sm
-                       focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="">Выберите...</option>
-            {items.map(item => (
-              <option key={item.value} value={item.value}>{item.label}</option>
-            ))}
-          </select>
-          {!source && <p className="text-xs text-destructive">Источник данных не найден</p>}
-        </div>
-      );
-    }
+      return <SelectRenderer name={name} props={props} style={inlineStyle} interactive={interactive} />;
+    case 'data-select':
+      return <DataSelectRenderer name={name} props={props} style={inlineStyle} interactive={interactive} />;
     case 'checkbox':
       return (
         <label data-name={name} className="flex items-center gap-2 text-sm text-foreground cursor-pointer" style={inlineStyle}>
@@ -200,10 +162,72 @@ function TextInputRenderer({ name, props, style, interactive }: { name?: string;
         type="text"
         placeholder={props.placeholder}
         readOnly={!interactive}
-        onChange={interactive && runtime && name ? (e) => runtime.setFilter(name, e.target.value) : undefined}
+        onChange={interactive && runtime && name ? (e) => runtime.setVariable(name, e.target.value) : undefined}
         className="w-full px-3 py-2 rounded-md bg-secondary border border-border text-foreground
                    placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
       />
+    </div>
+  );
+}
+
+function NumberInputRenderer({ name, props, style, interactive }: { name?: string; props: Record<string, any>; style: React.CSSProperties; interactive: boolean }) {
+  const runtime = usePreviewRuntime();
+  return (
+    <div data-name={name} className="space-y-1" style={style}>
+      <label className="text-sm font-medium text-foreground">{props.label}</label>
+      <input
+        type="number"
+        placeholder={props.placeholder}
+        min={props.min}
+        max={props.max}
+        readOnly={!interactive}
+        onChange={interactive && runtime && name ? (e) => runtime.setVariable(name, e.target.value) : undefined}
+        className="w-full px-3 py-2 rounded-md bg-secondary border border-border text-foreground
+                   placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+      />
+    </div>
+  );
+}
+
+function SelectRenderer({ name, props, style, interactive }: { name?: string; props: Record<string, any>; style: React.CSSProperties; interactive: boolean }) {
+  const runtime = usePreviewRuntime();
+  return (
+    <div data-name={name} className="space-y-1" style={style}>
+      <label className="text-sm font-medium text-foreground">{props.label}</label>
+      <select
+        disabled={!interactive}
+        onChange={interactive && runtime && name ? (e) => runtime.setVariable(name, e.target.value) : undefined}
+        className="w-full px-3 py-2 rounded-md bg-secondary border border-border text-foreground text-sm
+                   focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        <option value="">Выберите...</option>
+        {(props.options || []).map((opt: string) => (
+          <option key={opt} value={opt}>{opt}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function DataSelectRenderer({ name, props, style, interactive }: { name?: string; props: Record<string, any>; style: React.CSSProperties; interactive: boolean }) {
+  const runtime = usePreviewRuntime();
+  const source = mockDataSources[props.dataSource];
+  const items = source ? source.items : [];
+  return (
+    <div data-name={name} className="space-y-1" style={style}>
+      <label className="text-sm font-medium text-foreground">{props.label}</label>
+      <select
+        disabled={!interactive}
+        onChange={interactive && runtime && name ? (e) => runtime.setVariable(name, e.target.value) : undefined}
+        className="w-full px-3 py-2 rounded-md bg-secondary border border-border text-foreground text-sm
+                   focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        <option value="">Выберите...</option>
+        {items.map(item => (
+          <option key={item.value} value={item.value}>{item.label}</option>
+        ))}
+      </select>
+      {!source && <p className="text-xs text-destructive">Источник данных не найден</p>}
     </div>
   );
 }
@@ -216,27 +240,8 @@ function ButtonRenderer({ component, interactive, inlineStyle }: { component: Fo
   const handleClick = () => {
     if (!interactive) return;
 
-    // Special: "addToCart" button — find sibling select and add selected product
-    if (runtime && (name === 'addToCartBtn' || name === 'quickAddBtn')) {
-      // Find the closest product select
-      const selectEl = document.querySelector('[data-name="productSelect"] select, [data-name="quickSelect"] select') as HTMLSelectElement | null;
-      const qtyEl = document.querySelector('[data-name="qtyInput"] input') as HTMLInputElement | null;
-      if (selectEl && selectEl.value) {
-        const selectedOption = selectEl.options[selectEl.selectedIndex];
-        const label = selectedOption.text;
-        const price = parsePrice(label);
-        const qty = qtyEl ? parseInt(qtyEl.value || '1', 10) || 1 : 1;
-        runtime.addToCart({ name: label, price, priceLabel: `${price} ₽`, qty });
-      }
-    }
-
-    // Special: clear cart
-    if (runtime && name === 'clearCartBtn') {
-      runtime.clearCart();
-    }
-
     if (component.actions?.length) {
-      executeActions(component.actions);
+      executeActions(component.actions, runtime);
     }
     if (props.onClick) {
       try { new Function(props.onClick)(); } catch {}
@@ -266,25 +271,25 @@ function TableRenderer({ component, interactive, inlineStyle }: { component: For
   const columns = props.columns || [];
   let rows = props.rows || [];
 
-  // If this is the cart table, use runtime cart
-  if (interactive && runtime && name === 'cartTable') {
+  // If table has a filterBy prop, filter rows using that variable
+  if (interactive && runtime && props.filterBy) {
+    const filterText = runtime.getVariable(props.filterBy) || '';
+    if (typeof filterText === 'string' && filterText.trim()) {
+      const lower = filterText.toLowerCase();
+      rows = rows.filter((row: any) =>
+        Object.values(row).some((val: any) => String(val).toLowerCase().includes(lower))
+      );
+    }
+  }
+
+  // If table has a dataSource of "cart", render from runtime cart
+  if (interactive && runtime && props.dataSourceVar === 'cart') {
     rows = runtime.cart.map(item => ({
       name: item.name,
       price: item.priceLabel,
       qty: item.qty,
       total: `${item.price * item.qty} ₽`,
     }));
-  }
-
-  // Apply text filter from searchField
-  if (interactive && runtime && name === 'productTable') {
-    const filterText = runtime.filters['searchField'] || '';
-    if (filterText.trim()) {
-      const lower = filterText.toLowerCase();
-      rows = rows.filter((row: any) =>
-        Object.values(row).some((val: any) => String(val).toLowerCase().includes(lower))
-      );
-    }
   }
 
   return (

@@ -1,13 +1,15 @@
 import { paletteItems } from '@/data/palette';
 import {
   Type, AlignLeft, TextCursorInput, FileText, Hash,
-  ChevronDown, CheckSquare, MousePointerClick, Minus
+  ChevronDown, CheckSquare, MousePointerClick, Minus,
+  Calendar, ImageIcon, Database
 } from 'lucide-react';
 import type { DragItem } from '@/types/form';
 
 const iconMap: Record<string, React.FC<any>> = {
   Type, AlignLeft, TextCursorInput, FileText, Hash,
   ChevronDown, CheckSquare, MousePointerClick, Minus,
+  Calendar, ImageIcon, Database,
 };
 
 export function ComponentPalette() {

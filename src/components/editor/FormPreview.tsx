@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import type { FormData } from '@/types/form';
 import { FormComponentRenderer } from './FormComponentRenderer';
 
@@ -7,7 +6,6 @@ interface Props {
 }
 
 export function FormPreview({ form }: Props) {
-  // If form has custom HTML, render it in an iframe for isolation
   if (form.customHtml) {
     const html = `<!DOCTYPE html>
 <html><head><style>
@@ -36,10 +34,14 @@ ${form.customCss || ''}
   }
 
   return (
-    <div className="max-w-lg mx-auto p-6 space-y-4">
-      {form.components.map(comp => (
-        <FormComponentRenderer key={comp.id} component={comp} interactive />
-      ))}
+    <div className="max-w-2xl mx-auto p-6">
+      <div className="grid grid-cols-12 gap-2">
+        {form.components.map(comp => (
+          <div key={comp.id} style={{ gridColumn: `span ${comp.colSpan || 12}` }}>
+            <FormComponentRenderer component={comp} interactive />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

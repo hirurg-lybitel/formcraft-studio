@@ -8,12 +8,13 @@ import { FormPreview } from './FormPreview';
 
 interface Props {
   form: FormData;
+  allForms: FormData[];
   onChange: (form: FormData) => void;
   onSave: (form: FormData) => void;
   onBack: () => void;
 }
 
-export function FormEditor({ form, onChange, onSave, onBack }: Props) {
+export function FormEditor({ form, allForms, onChange, onSave, onBack }: Props) {
   const [showPreview, setShowPreview] = useState(false);
 
   return (
@@ -29,13 +30,13 @@ export function FormEditor({ form, onChange, onSave, onBack }: Props) {
       <div className="flex-1 flex min-h-0">
         {showPreview ? (
           <div className="flex-1 bg-canvas overflow-auto">
-            <FormPreview form={form} />
+            <FormPreview form={form} allForms={allForms} />
           </div>
         ) : form.mode === 'visual' ? (
           <>
             <ComponentPalette />
             <div className="flex-1 bg-canvas canvas-grid overflow-auto">
-              <FormCanvas form={form} onChange={onChange} />
+              <FormCanvas form={form} allFormNames={allForms.map(f => f.name)} onChange={onChange} />
             </div>
           </>
         ) : (

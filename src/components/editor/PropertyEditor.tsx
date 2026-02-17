@@ -5,6 +5,7 @@ import { X, Plus, Trash2 } from 'lucide-react';
 interface Props {
   component: FormComponent;
   allComponents: FormComponent[];
+  allFormNames?: string[];
   onChange: (updates: Partial<FormComponent>) => void;
   onClose: () => void;
 }
@@ -16,10 +17,12 @@ const ACTION_LABELS: Record<string, string> = {
   hide: 'Скрыть',
   show: 'Показать',
   toggleVisibility: 'Переключить видимость',
+  openForm: 'Открыть форму',
+  closeForm: 'Закрыть форму',
 };
 
-export function PropertyEditor({ component, allComponents, onChange, onClose }: Props) {
-  const { type, props, style = {}, name = '', colSpan = 12, actions = [] } = component;
+export function PropertyEditor({ component, allComponents, allFormNames = [], onChange, onClose }: Props) {
+  const { type, props, style = {}, name = '', colSpan = 12, colStart, actions = [] } = component;
 
   const updateProp = (key: string, value: any) => {
     onChange({ props: { ...props, [key]: value } });
@@ -58,6 +61,23 @@ export function PropertyEditor({ component, allComponents, onChange, onClose }: 
         <div className="space-y-1">
           <label className={labelClass}>Имя компонента</label>
           <input value={name} onChange={e => onChange({ name: e.target.value })} placeholder="myComponent" className={fieldClass + ' font-mono text-xs'} />
+        </div>
+
+        {/* Grid position */}
+        <div className="space-y-1">
+          <label className={labelClass}>Начальная колонка (1-12, пусто = авто)</label>
+          <input
+            type="number"
+            min={1}
+            max={12}
+            value={colStart || ''}
+            onChange={e => {
+              const v = e.target.value ? Number(e.target.value) : undefined;
+              onChange({ colStart: v });
+            }}
+            placeholder="авто"
+            className={fieldClass}
+          />
         </div>
 
         {/* Grid span */}
@@ -252,16 +272,6 @@ export function PropertyEditor({ component, allComponents, onChange, onClose }: 
                     </button>
                   </div>
                   <select
-                    value={act.targetName}
-                    onChange={e => updateAction(idx, { targetName: e.target.value })}
-                    className={fieldClass + ' text-xs'}
-                  >
-                    <option value="">— цель —</option>
-                    {namedComponents.map(c => (
-                      <option key={c.id} value={c.name}>{c.name} ({c.type})</option>
-                    ))}
-                  </select>
-                  <select
                     value={act.action}
                     onChange={e => updateAction(idx, { action: e.target.value as ComponentAction['action'] })}
                     className={fieldClass + ' text-xs'}
@@ -270,13 +280,49 @@ export function PropertyEditor({ component, allComponents, onChange, onClose }: 
                       <option key={k} value={k}>{v}</option>
                     ))}
                   </select>
-                  {!['hide', 'show', 'toggleVisibility'].includes(act.action) && (
-                    <input
-                      value={act.value || ''}
-                      onChange={e => updateAction(idx, { value: e.target.value })}
-                      placeholder="Значение"
-                      className={fieldClass + ' text-xs'}
-                    />
+
+                  {act.action === 'openForm' ? (
+                    <>
+                      <input
+                        value={act.value || ''}
+                        onChange={e => updateAction(idx, { value: e.target.value })}
+                        placeholder="Имя формы"
+                        className={fieldClass + ' text-xs'}
+                        list={`form-names-${idx}`}
+                      />
+                      <datalist id={`form-names-${idx}`}>
+                        {allFormNames.map(n => <option key={n} value={n} />)}
+                      </datalist>
+                      <select
+                        value={act.openMode || 'modal'}
+                        onChange={e => updateAction(idx, { openMode: e.target.value as 'modal' | 'replace' })}
+                        className={fieldClass + ' text-xs'}
+                      >
+                        <option value="modal">Модальное окно</option>
+                        <option value="replace">Заменить экран</option>
+                      </select>
+                    </>
+                  ) : act.action === 'closeForm' ? null : (
+                    <>
+                      <select
+                        value={act.targetName}
+                        onChange={e => updateAction(idx, { targetName: e.target.value })}
+                        className={fieldClass + ' text-xs'}
+                      >
+                        <option value="">— цель —</option>
+                        {namedComponents.map(c => (
+                          <option key={c.id} value={c.name}>{c.name} ({c.type})</option>
+                        ))}
+                      </select>
+                      {!['hide', 'show', 'toggleVisibility'].includes(act.action) && (
+                        <input
+                          value={act.value || ''}
+                          onChange={e => updateAction(idx, { value: e.target.value })}
+                          placeholder="Значение"
+                          className={fieldClass + ' text-xs'}
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               ))}

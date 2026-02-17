@@ -6,10 +6,18 @@ import { PropertyEditor } from './PropertyEditor';
 
 interface Props {
   form: FormData;
+  allFormNames?: string[];
   onChange: (form: FormData) => void;
 }
 
-export function FormCanvas({ form, onChange }: Props) {
+function getGridColumn(comp: FormComponent): string {
+  if (comp.colStart) {
+    return `${comp.colStart} / span ${comp.colSpan || 12}`;
+  }
+  return `span ${comp.colSpan || 12}`;
+}
+
+export function FormCanvas({ form, allFormNames = [], onChange }: Props) {
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -67,10 +75,18 @@ export function FormCanvas({ form, onChange }: Props) {
 
   const editingComponent = editingId ? form.components.find(c => c.id === editingId) : null;
 
+  const bgStyle: React.CSSProperties = {};
+  if (form.background?.color) bgStyle.backgroundColor = form.background.color;
+  if (form.background?.image) {
+    bgStyle.backgroundImage = `url(${form.background.image})`;
+    bgStyle.backgroundSize = 'cover';
+    bgStyle.backgroundPosition = 'center';
+  }
+
   return (
     <div className="flex-1 flex">
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto rounded-lg" style={bgStyle}>
           {/* Column labels */}
           <div className="grid grid-cols-12 gap-1 mb-2">
             {Array.from({ length: 12 }, (_, i) => (
@@ -91,7 +107,7 @@ export function FormCanvas({ form, onChange }: Props) {
             {form.components.map((comp, idx) => (
               <div
                 key={comp.id}
-                style={{ gridColumn: `span ${comp.colSpan || 12}` }}
+                style={{ gridColumn: getGridColumn(comp) }}
               >
                 <div
                   className={`group relative rounded-lg border transition-all
@@ -159,6 +175,7 @@ export function FormCanvas({ form, onChange }: Props) {
         <PropertyEditor
           component={editingComponent}
           allComponents={form.components}
+          allFormNames={allFormNames}
           onChange={(updates) => updateComponent(editingComponent.id, updates)}
           onClose={() => setEditingId(null)}
         />

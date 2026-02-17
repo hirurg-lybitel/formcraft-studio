@@ -1,4 +1,4 @@
-import type { FormComponent, ComponentStyle } from '@/types/form';
+import type { FormComponent, ComponentStyle, ComponentAction } from '@/types/form';
 import { mockDataSources } from '@/data/mockData';
 
 interface Props {
@@ -16,6 +16,43 @@ function buildInlineStyle(style?: ComponentStyle): React.CSSProperties {
   if (style.borderRadius) s.borderRadius = style.borderRadius;
   if (style.backgroundColor) s.backgroundColor = style.backgroundColor;
   return s;
+}
+
+function executeActions(actions: ComponentAction[]) {
+  actions.forEach(act => {
+    if (act.action === 'openForm') {
+      window.dispatchEvent(new CustomEvent('form:openForm', {
+        detail: { formName: act.value, mode: act.openMode || 'modal' },
+      }));
+      return;
+    }
+    if (act.action === 'closeForm') {
+      window.dispatchEvent(new CustomEvent('form:closeForm'));
+      return;
+    }
+    const target = document.querySelector(`[data-name="${act.targetName}"]`) as HTMLElement;
+    if (!target) return;
+    switch (act.action) {
+      case 'setText':
+        target.textContent = act.value || '';
+        break;
+      case 'setColor':
+        target.style.color = act.value || '';
+        break;
+      case 'setBgColor':
+        target.style.backgroundColor = act.value || '';
+        break;
+      case 'hide':
+        target.style.display = 'none';
+        break;
+      case 'show':
+        target.style.display = '';
+        break;
+      case 'toggleVisibility':
+        target.style.display = target.style.display === 'none' ? '' : 'none';
+        break;
+    }
+  });
 }
 
 export function FormComponentRenderer({ component, interactive = false }: Props) {
@@ -147,34 +184,9 @@ export function FormComponentRenderer({ component, interactive = false }: Props)
           data-name={name}
           type="button"
           onClick={interactive ? () => {
-            // Execute visual actions
             if (component.actions?.length) {
-              component.actions.forEach(act => {
-                const target = document.querySelector(`[data-name="${act.targetName}"]`) as HTMLElement;
-                if (!target) return;
-                switch (act.action) {
-                  case 'setText':
-                    target.textContent = act.value || '';
-                    break;
-                  case 'setColor':
-                    target.style.color = act.value || '';
-                    break;
-                  case 'setBgColor':
-                    target.style.backgroundColor = act.value || '';
-                    break;
-                  case 'hide':
-                    target.style.display = 'none';
-                    break;
-                  case 'show':
-                    target.style.display = '';
-                    break;
-                  case 'toggleVisibility':
-                    target.style.display = target.style.display === 'none' ? '' : 'none';
-                    break;
-                }
-              });
+              executeActions(component.actions);
             }
-            // Execute custom JS
             if (props.onClick) {
               try { new Function(props.onClick)(); } catch {}
             }

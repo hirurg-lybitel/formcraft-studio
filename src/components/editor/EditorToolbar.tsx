@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import type { FormData } from '@/types/form';
-import { Save, Eye, Code, Layout, ArrowLeft } from 'lucide-react';
+import { Save, Eye, Code, Layout, ArrowLeft, Palette } from 'lucide-react';
 
 interface Props {
   form: FormData;
@@ -12,9 +13,12 @@ interface Props {
 
 export function EditorToolbar({ form, onChange, onSave, onBack, previewOpen, onTogglePreview }: Props) {
   const isCode = form.mode === 'code';
+  const [showBg, setShowBg] = useState(false);
+
+  const bg = form.background || {};
 
   return (
-    <div className="h-12 border-b border-border bg-editor-surface flex items-center px-3 gap-2">
+    <div className="h-12 border-b border-border bg-editor-surface flex items-center px-3 gap-2 relative">
       <button onClick={onBack} className="p-2 rounded hover:bg-editor-hover text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft className="h-4 w-4" />
       </button>
@@ -25,6 +29,14 @@ export function EditorToolbar({ form, onChange, onSave, onBack, previewOpen, onT
         className="bg-transparent border-none text-foreground font-medium text-sm focus:outline-none
                    px-2 py-1 rounded hover:bg-editor-hover focus:bg-editor-hover w-48"
       />
+
+      <button
+        onClick={() => setShowBg(!showBg)}
+        className={`p-2 rounded transition-colors ${showBg ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-editor-hover'}`}
+        title="Фон формы"
+      >
+        <Palette className="h-4 w-4" />
+      </button>
 
       <div className="flex-1" />
 
@@ -63,6 +75,45 @@ export function EditorToolbar({ form, onChange, onSave, onBack, previewOpen, onT
       >
         <Save className="h-3.5 w-3.5" /> Сохранить
       </button>
+
+      {/* Background settings popover */}
+      {showBg && (
+        <div className="absolute top-12 left-32 z-50 w-64 p-3 rounded-lg border border-border bg-card shadow-xl space-y-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Фон формы</h4>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Цвет фона</label>
+            <div className="flex gap-1">
+              <input
+                type="color"
+                value={bg.color || '#1a1f2e'}
+                onChange={e => onChange({ ...form, background: { ...bg, color: e.target.value } })}
+                className="w-8 h-8 rounded border border-border cursor-pointer bg-transparent"
+              />
+              <input
+                value={bg.color || ''}
+                onChange={e => onChange({ ...form, background: { ...bg, color: e.target.value } })}
+                placeholder="Не задан"
+                className="flex-1 px-2 py-1.5 rounded bg-secondary border border-border text-foreground text-sm"
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">URL фонового изображения</label>
+            <input
+              value={bg.image || ''}
+              onChange={e => onChange({ ...form, background: { ...bg, image: e.target.value } })}
+              placeholder="https://..."
+              className="w-full px-2 py-1.5 rounded bg-secondary border border-border text-foreground text-sm"
+            />
+          </div>
+          <button
+            onClick={() => onChange({ ...form, background: undefined })}
+            className="text-xs text-destructive hover:text-destructive/80"
+          >
+            Сбросить фон
+          </button>
+        </div>
+      )}
     </div>
   );
 }

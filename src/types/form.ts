@@ -7,12 +7,33 @@ export type ComponentType =
   | 'select'
   | 'checkbox'
   | 'button'
-  | 'divider';
+  | 'divider'
+  | 'date-picker'
+  | 'image'
+  | 'data-select';
+
+export interface ComponentStyle {
+  color?: string;
+  fontSize?: string;
+  fontSizeUnit?: 'px' | 'rem' | '%' | 'vw' | 'vh';
+  borderRadius?: string;
+  backgroundColor?: string;
+}
+
+export interface ComponentAction {
+  targetName: string;
+  action: 'setText' | 'setColor' | 'setBgColor' | 'hide' | 'show' | 'toggleVisibility';
+  value?: string;
+}
 
 export interface FormComponent {
   id: string;
   type: ComponentType;
+  name?: string;
   props: Record<string, any>;
+  style?: ComponentStyle;
+  colSpan?: number; // 1-12
+  actions?: ComponentAction[];
 }
 
 export interface FormData {

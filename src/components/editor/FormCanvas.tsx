@@ -18,6 +18,7 @@ export function FormCanvas({ form, onChange }: Props) {
       id: Math.random().toString(36).slice(2, 10),
       type: item.type,
       props: { ...item.defaultProps },
+      colSpan: 12,
     };
     const comps = [...form.components];
     comps.splice(index, 0, newComp);
@@ -29,10 +30,10 @@ export function FormCanvas({ form, onChange }: Props) {
     if (editingId === id) setEditingId(null);
   };
 
-  const updateComponent = (id: string, props: Record<string, any>) => {
+  const updateComponent = (id: string, updates: Partial<FormComponent>) => {
     onChange({
       ...form,
-      components: form.components.map(c => c.id === id ? { ...c, props } : c),
+      components: form.components.map(c => c.id === id ? { ...c, ...updates } : c),
     });
   };
 
@@ -69,7 +70,14 @@ export function FormCanvas({ form, onChange }: Props) {
   return (
     <div className="flex-1 flex">
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-lg mx-auto">
+        <div className="max-w-2xl mx-auto">
+          {/* Column labels */}
+          <div className="grid grid-cols-12 gap-1 mb-2">
+            {Array.from({ length: 12 }, (_, i) => (
+              <div key={i} className="text-[10px] text-muted-foreground/40 text-center">{i + 1}</div>
+            ))}
+          </div>
+
           {/* Drop zone at top */}
           <div
             onDrop={e => handleDrop(e, 0)}
@@ -78,50 +86,61 @@ export function FormCanvas({ form, onChange }: Props) {
             className={`h-3 rounded transition-all ${dragOverIdx === 0 ? 'bg-primary/30 h-8' : ''}`}
           />
 
-          {form.components.map((comp, idx) => (
-            <div key={comp.id}>
+          {/* Grid container */}
+          <div className="grid grid-cols-12 gap-2">
+            {form.components.map((comp, idx) => (
               <div
-                className={`group relative rounded-lg border transition-all mb-1
-                  ${editingId === comp.id ? 'border-primary bg-primary/5' : 'border-transparent hover:border-border'}
-                `}
+                key={comp.id}
+                style={{ gridColumn: `span ${comp.colSpan || 12}` }}
               >
-                <div className="absolute -left-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div
-                    draggable
-                    onDragStart={e => {
-                      e.dataTransfer.setData('application/json', JSON.stringify({ reorderIdx: idx }));
-                    }}
-                    className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
-                  >
-                    <GripVertical className="h-4 w-4" />
+                <div
+                  className={`group relative rounded-lg border transition-all
+                    ${editingId === comp.id ? 'border-primary bg-primary/5' : 'border-transparent hover:border-border'}
+                  `}
+                >
+                  <div className="absolute -left-7 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <div
+                      draggable
+                      onDragStart={e => {
+                        e.dataTransfer.setData('application/json', JSON.stringify({ reorderIdx: idx }));
+                      }}
+                      className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+                    >
+                      <GripVertical className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <div className="absolute -right-14 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
+                    <button
+                      onClick={() => setEditingId(editingId === comp.id ? null : comp.id)}
+                      className="p-1 rounded hover:bg-editor-hover text-muted-foreground hover:text-primary"
+                    >
+                      <Settings className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => removeComponent(comp.id)}
+                      className="p-1 rounded hover:bg-editor-hover text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  {comp.name && (
+                    <div className="absolute -top-4 left-2 text-[10px] text-primary/60 font-mono">
+                      {comp.name}
+                    </div>
+                  )}
+                  <div className="p-3" onClick={() => setEditingId(comp.id)}>
+                    <FormComponentRenderer component={comp} />
                   </div>
                 </div>
-                <div className="absolute -right-16 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                  <button
-                    onClick={() => setEditingId(editingId === comp.id ? null : comp.id)}
-                    className="p-1 rounded hover:bg-editor-hover text-muted-foreground hover:text-primary"
-                  >
-                    <Settings className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => removeComponent(comp.id)}
-                    className="p-1 rounded hover:bg-editor-hover text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-                <div className="p-3" onClick={() => setEditingId(comp.id)}>
-                  <FormComponentRenderer component={comp} />
-                </div>
+                <div
+                  onDrop={e => handleDrop(e, idx + 1)}
+                  onDragOver={e => handleDragOver(e, idx + 1)}
+                  onDragLeave={() => setDragOverIdx(null)}
+                  className={`h-1 rounded transition-all ${dragOverIdx === idx + 1 ? 'bg-primary/30 h-8' : ''}`}
+                />
               </div>
-              <div
-                onDrop={e => handleDrop(e, idx + 1)}
-                onDragOver={e => handleDragOver(e, idx + 1)}
-                onDragLeave={() => setDragOverIdx(null)}
-                className={`h-1 rounded transition-all ${dragOverIdx === idx + 1 ? 'bg-primary/30 h-8' : ''}`}
-              />
-            </div>
-          ))}
+            ))}
+          </div>
 
           {form.components.length === 0 && (
             <div
@@ -139,7 +158,8 @@ export function FormCanvas({ form, onChange }: Props) {
       {editingComponent && (
         <PropertyEditor
           component={editingComponent}
-          onChange={props => updateComponent(editingComponent.id, props)}
+          allComponents={form.components}
+          onChange={(updates) => updateComponent(editingComponent.id, updates)}
           onClose={() => setEditingId(null)}
         />
       )}

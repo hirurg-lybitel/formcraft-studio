@@ -7,7 +7,10 @@ export const paletteItems: DragItem[] = [
   { type: 'textarea', label: 'Многострочное', icon: 'FileText', defaultProps: { label: 'Описание', placeholder: 'Введите текст...', rows: 3 } },
   { type: 'number-input', label: 'Числовое поле', icon: 'Hash', defaultProps: { label: 'Число', placeholder: '0' } },
   { type: 'select', label: 'Выпадающий список', icon: 'ChevronDown', defaultProps: { label: 'Выбор', options: ['Вариант 1', 'Вариант 2', 'Вариант 3'] } },
+  { type: 'data-select', label: 'Список из БД', icon: 'Database', defaultProps: { label: 'Данные', dataSource: 'mock', options: [] } },
   { type: 'checkbox', label: 'Чекбокс', icon: 'CheckSquare', defaultProps: { label: 'Флажок' } },
+  { type: 'date-picker', label: 'Дата', icon: 'Calendar', defaultProps: { label: 'Дата' } },
+  { type: 'image', label: 'Изображение', icon: 'ImageIcon', defaultProps: { src: 'https://placehold.co/400x200/2a3040/94a3b8?text=Image', alt: 'Изображение', width: '100%' } },
   { type: 'button', label: 'Кнопка', icon: 'MousePointerClick', defaultProps: { text: 'Кнопка', variant: 'primary', onClick: '' } },
   { type: 'divider', label: 'Разделитель', icon: 'Minus', defaultProps: {} },
 ];

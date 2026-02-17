@@ -35,6 +35,23 @@ function executeActions(actions: ComponentAction[], runtime: ReturnType<typeof u
       runtime.setVariable(act.targetName, act.value || '');
       return;
     }
+    if (act.action === 'addToCart' && runtime) {
+      // targetName = name of the select component holding the product
+      const selectedLabel = runtime.getVariable(act.targetName);
+      if (!selectedLabel) return;
+      const qtyVar = act.value ? runtime.getVariable(act.value) : undefined;
+      const qty = parseInt(qtyVar, 10) || 1;
+      const price = parsePrice(selectedLabel);
+      const nameMatch = selectedLabel.match(/^(.+?)(?:\s*[—\-]\s*\d+)/);
+      const itemName = nameMatch ? nameMatch[1].trim() : selectedLabel;
+      runtime.addToCart({ name: itemName, price, priceLabel: `${price} ₽`, qty });
+      // Auto-update cartTotal variable for {{cartTotal}} interpolation
+      return;
+    }
+    if (act.action === 'clearCart' && runtime) {
+      runtime.clearCart();
+      return;
+    }
     const target = document.querySelector(`[data-name="${act.targetName}"]`) as HTMLElement;
     if (!target) return;
     switch (act.action) {

@@ -23,7 +23,7 @@ export interface ComponentStyle {
 
 export interface ComponentAction {
   targetName: string;
-  action: 'setText' | 'setColor' | 'setBgColor' | 'hide' | 'show' | 'toggleVisibility' | 'openForm' | 'closeForm' | 'setVariable';
+  action: 'setText' | 'setColor' | 'setBgColor' | 'hide' | 'show' | 'toggleVisibility' | 'openForm' | 'closeForm' | 'setVariable' | 'addToCart' | 'clearCart';
   value?: string;
   openMode?: 'modal' | 'replace';
 }

@@ -12,5 +12,6 @@ export const paletteItems: DragItem[] = [
   { type: 'date-picker', label: 'Дата', icon: 'Calendar', defaultProps: { label: 'Дата' } },
   { type: 'image', label: 'Изображение', icon: 'ImageIcon', defaultProps: { src: 'https://placehold.co/400x200/2a3040/94a3b8?text=Image', alt: 'Изображение', width: '100%' } },
   { type: 'button', label: 'Кнопка', icon: 'MousePointerClick', defaultProps: { text: 'Кнопка', variant: 'primary', onClick: '' } },
+  { type: 'table', label: 'Таблица', icon: 'Table', defaultProps: { columns: [{ key: 'col1', label: 'Столбец 1' }, { key: 'col2', label: 'Столбец 2' }], rows: [{ col1: 'Значение 1', col2: 'Значение 2' }] } },
   { type: 'divider', label: 'Разделитель', icon: 'Minus', defaultProps: {} },
 ];

@@ -155,6 +155,30 @@ export function PropertyEditor({ component, allComponents, onChange, onClose }: 
             <input type="number" value={props.rows || 3} onChange={e => updateProp('rows', Number(e.target.value))} min={1} max={20} className={fieldClass} />
           </div>
         )}
+        {type === 'table' && (
+          <>
+            <div className="space-y-1">
+              <label className={labelClass}>Столбцы (JSON)</label>
+              <textarea
+                value={JSON.stringify(props.columns || [], null, 2)}
+                onChange={e => { try { updateProp('columns', JSON.parse(e.target.value)); } catch {} }}
+                rows={4}
+                className={fieldClass + ' font-mono text-xs'}
+                placeholder='[{"key":"col1","label":"Столбец 1"}]'
+              />
+            </div>
+            <div className="space-y-1">
+              <label className={labelClass}>Данные (JSON)</label>
+              <textarea
+                value={JSON.stringify(props.rows || [], null, 2)}
+                onChange={e => { try { updateProp('rows', JSON.parse(e.target.value)); } catch {} }}
+                rows={4}
+                className={fieldClass + ' font-mono text-xs'}
+                placeholder='[{"col1":"Значение"}]'
+              />
+            </div>
+          </>
+        )}
 
         {/* CSS Styles section */}
         <div className={sectionClass}>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { FormData } from '@/types/form';
 import { FormComponentRenderer } from './FormComponentRenderer';
 import { PreviewRuntimeProvider } from './PreviewRuntimeContext';
@@ -71,6 +71,13 @@ export function FormPreview({ form, allForms = [] }: Props) {
     };
   }, [handleOpenForm, handleCloseForm]);
 
+  // Collect computed variables from all active forms
+  const allComputedVars = useMemo(() => [
+    ...(form.computedVariables || []),
+    ...(replacedForm?.computedVariables || []),
+    ...(modalForm?.computedVariables || []),
+  ], [form.computedVariables, replacedForm?.computedVariables, modalForm?.computedVariables]);
+
   if (form.customHtml) {
     const html = `<!DOCTYPE html>
 <html><head><style>
@@ -101,7 +108,7 @@ ${form.customCss || ''}
   const activeForm = replacedForm || form;
 
   return (
-    <PreviewRuntimeProvider>
+    <PreviewRuntimeProvider computedVariables={allComputedVars}>
       <div className="relative h-full">
         <FormContent form={activeForm} />
 

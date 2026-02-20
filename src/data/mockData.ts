@@ -1,5 +1,6 @@
 // Mock data sources for data-select component
-export const mockDataSources: Record<string, { label: string; items: { value: string; label: string }[] }> = {
+// Items can have extra fields beyond label/value — they get published as varName_fieldName
+export const mockDataSources: Record<string, { label: string; items: { value: string; label: string; [key: string]: any }[] }> = {
   countries: {
     label: 'Страны',
     items: [
@@ -43,16 +44,16 @@ export const mockDataSources: Record<string, { label: string; items: { value: st
   products: {
     label: 'Товары',
     items: [
-      { value: 'bread', label: 'Хлеб белый — 59₽' },
-      { value: 'milk', label: 'Молоко 1л — 89₽' },
-      { value: 'cheese', label: 'Сыр Российский — 349₽' },
-      { value: 'apple', label: 'Яблоки 1кг — 129₽' },
-      { value: 'chicken', label: 'Курица 1кг — 289₽' },
-      { value: 'water', label: 'Вода 1.5л — 45₽' },
-      { value: 'pasta', label: 'Макароны 500г — 79₽' },
-      { value: 'butter', label: 'Масло сливочное — 159₽' },
-      { value: 'eggs', label: 'Яйца 10шт — 119₽' },
-      { value: 'sugar', label: 'Сахар 1кг — 69₽' },
+      { value: 'bread', label: 'Хлеб белый', price: 59 },
+      { value: 'milk', label: 'Молоко 1л', price: 89 },
+      { value: 'cheese', label: 'Сыр Российский', price: 349 },
+      { value: 'apple', label: 'Яблоки 1кг', price: 129 },
+      { value: 'chicken', label: 'Курица 1кг', price: 289 },
+      { value: 'water', label: 'Вода 1.5л', price: 45 },
+      { value: 'pasta', label: 'Макароны 500г', price: 79 },
+      { value: 'butter', label: 'Масло сливочное', price: 159 },
+      { value: 'eggs', label: 'Яйца 10шт', price: 119 },
+      { value: 'sugar', label: 'Сахар 1кг', price: 69 },
     ],
   },
 };

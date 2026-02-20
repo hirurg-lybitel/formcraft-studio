@@ -23,9 +23,15 @@ export interface ComponentStyle {
 
 export interface ComponentAction {
   targetName: string;
-  action: 'setText' | 'setColor' | 'setBgColor' | 'hide' | 'show' | 'toggleVisibility' | 'openForm' | 'closeForm' | 'setVariable' | 'addToCart' | 'clearCart';
+  action: 'setText' | 'setColor' | 'setBgColor' | 'hide' | 'show' | 'toggleVisibility' | 'openForm' | 'closeForm' | 'setVariable' | 'pushToList' | 'clearVariable';
   value?: string;
   openMode?: 'modal' | 'replace';
+}
+
+export interface ComputedVariable {
+  name: string;
+  /** Expression: sum(list.field), sum(list.f1 * list.f2), count(list) */
+  expression: string;
 }
 
 export interface FormComponent {
@@ -48,6 +54,7 @@ export interface FormData {
   customJs: string;
   mode: 'visual' | 'code';
   background?: { color?: string; image?: string };
+  computedVariables?: ComputedVariable[];
   createdAt: number;
   updatedAt: number;
 }

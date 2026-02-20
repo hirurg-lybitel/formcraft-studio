@@ -20,6 +20,8 @@ const ACTION_LABELS: Record<string, string> = {
   openForm: 'Открыть форму',
   closeForm: 'Закрыть форму',
   setVariable: 'Установить переменную',
+  pushToList: 'Добавить в список',
+  clearVariable: 'Очистить переменную',
 };
 
 export function PropertyEditor({ component, allComponents, allFormNames = [], onChange, onClose }: Props) {
@@ -93,7 +95,7 @@ export function PropertyEditor({ component, allComponents, allFormNames = [], on
           <div className="space-y-1">
             <label className={labelClass}>Текст</label>
             <textarea value={props.text || ''} onChange={e => updateProp('text', e.target.value)} rows={2} className={fieldClass} />
-            <p className="text-[10px] text-muted-foreground">Используйте {'{{имяПеременной}}'} для динамических данных, например {'{{cartTotal}}'}</p>
+            <p className="text-[10px] text-muted-foreground">Используйте {'{{имяПеременной}}'} для динамических данных</p>
           </div>
         )}
         {type === 'heading' && (
@@ -130,15 +132,20 @@ export function PropertyEditor({ component, allComponents, allFormNames = [], on
           </div>
         )}
         {type === 'data-select' && (
-          <div className="space-y-1">
-            <label className={labelClass}>Источник данных</label>
-            <select value={props.dataSource || ''} onChange={e => updateProp('dataSource', e.target.value)} className={fieldClass}>
-              <option value="">— выберите —</option>
-              {Object.entries(mockDataSources).map(([key, src]) => (
-                <option key={key} value={key}>{src.label}</option>
-              ))}
-            </select>
-          </div>
+          <>
+            <div className="space-y-1">
+              <label className={labelClass}>Источник данных</label>
+              <select value={props.dataSource || ''} onChange={e => updateProp('dataSource', e.target.value)} className={fieldClass}>
+                <option value="">— выберите —</option>
+                {Object.entries(mockDataSources).map(([key, src]) => (
+                  <option key={key} value={key}>{src.label}</option>
+                ))}
+              </select>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              При выборе доп. поля (напр. price) публикуются как <code className="text-primary">{'{{имя_price}}'}</code>
+            </p>
+          </>
         )}
         {type === 'image' && (
           <>
@@ -188,6 +195,9 @@ export function PropertyEditor({ component, allComponents, allFormNames = [], on
                 className={fieldClass + ' font-mono text-xs'}
                 placeholder='[{"key":"col1","label":"Столбец 1"}]'
               />
+              <p className="text-[10px] text-muted-foreground">
+                Для вычисляемых столбцов: <code>{'{"key":"total","label":"Сумма","expression":"price * qty"}'}</code>
+              </p>
             </div>
             <div className="space-y-1">
               <label className={labelClass}>Данные (JSON)</label>
@@ -205,11 +215,14 @@ export function PropertyEditor({ component, allComponents, allFormNames = [], on
               <p className="text-[10px] text-muted-foreground">Имя text-input, по которому фильтровать строки</p>
             </div>
             <div className="space-y-1">
-              <label className={labelClass}>Источник данных (переменная)</label>
-              <select value={props.dataSourceVar || ''} onChange={e => updateProp('dataSourceVar', e.target.value)} className={fieldClass + ' text-xs'}>
-                <option value="">Статические данные</option>
-                <option value="cart">Корзина (cart)</option>
-              </select>
+              <label className={labelClass}>Источник данных (переменная-список)</label>
+              <input
+                value={props.dataSourceVar || ''}
+                onChange={e => updateProp('dataSourceVar', e.target.value)}
+                placeholder="имя переменной-списка"
+                className={fieldClass + ' text-xs font-mono'}
+              />
+              <p className="text-[10px] text-muted-foreground">Имя переменной-массива, из которой брать строки (вместо статических данных)</p>
             </div>
           </>
         )}
@@ -295,6 +308,7 @@ export function PropertyEditor({ component, allComponents, allFormNames = [], on
                     ))}
                   </select>
 
+                  {/* --- Action-specific fields --- */}
                   {act.action === 'openForm' ? (
                     <>
                       <input
@@ -316,7 +330,8 @@ export function PropertyEditor({ component, allComponents, allFormNames = [], on
                         <option value="replace">Заменить экран</option>
                       </select>
                     </>
-                  ) : act.action === 'closeForm' ? null : act.action === 'setVariable' ? (
+                  ) : act.action === 'closeForm' ? null
+                  : act.action === 'setVariable' ? (
                     <>
                       <input
                         value={act.targetName || ''}
@@ -327,8 +342,36 @@ export function PropertyEditor({ component, allComponents, allFormNames = [], on
                       <input
                         value={act.value || ''}
                         onChange={e => updateAction(idx, { value: e.target.value })}
-                        placeholder="Значение"
+                        placeholder="Значение (поддерживает {{var}})"
                         className={fieldClass + ' text-xs'}
+                      />
+                    </>
+                  ) : act.action === 'pushToList' ? (
+                    <>
+                      <input
+                        value={act.targetName || ''}
+                        onChange={e => updateAction(idx, { targetName: e.target.value })}
+                        placeholder="Имя переменной-списка"
+                        className={fieldClass + ' text-xs font-mono'}
+                      />
+                      <textarea
+                        value={act.value || ''}
+                        onChange={e => updateAction(idx, { value: e.target.value })}
+                        placeholder='JSON шаблон: {"name":"{{select1}}","price":{{select1_price}}}'
+                        rows={3}
+                        className={fieldClass + ' text-xs font-mono'}
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        JSON-объект с {'{{переменная}}'} для подстановки значений
+                      </p>
+                    </>
+                  ) : act.action === 'clearVariable' ? (
+                    <>
+                      <input
+                        value={act.targetName || ''}
+                        onChange={e => updateAction(idx, { targetName: e.target.value })}
+                        placeholder="Имя переменной для очистки"
+                        className={fieldClass + ' text-xs font-mono'}
                       />
                     </>
                   ) : (
@@ -366,7 +409,13 @@ export function PropertyEditor({ component, allComponents, allFormNames = [], on
             {/* Raw JS */}
             <div className="space-y-1 mt-3">
               <label className={labelClass}>onClick (JS)</label>
-              <textarea value={props.onClick || ''} onChange={e => updateProp('onClick', e.target.value)} rows={3} className={fieldClass + ' font-mono text-xs'} />
+              <textarea
+                value={props.onClick || ''}
+                onChange={e => updateProp('onClick', e.target.value)}
+                rows={2}
+                placeholder='alert("hello")'
+                className={fieldClass + ' font-mono text-xs'}
+              />
             </div>
           </div>
         )}

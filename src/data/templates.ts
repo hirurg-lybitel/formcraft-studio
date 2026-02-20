@@ -46,16 +46,16 @@ const kioskSearchComponents: FormComponent[] = [
       { key: 'category', label: 'Категория' },
     ],
     rows: [
-      { name: 'Хлеб белый', price: '59 ₽', category: 'Хлеб' },
-      { name: 'Хлеб чёрный', price: '49 ₽', category: 'Хлеб' },
-      { name: 'Молоко 1л', price: '89 ₽', category: 'Молочные' },
-      { name: 'Кефир 1л', price: '79 ₽', category: 'Молочные' },
-      { name: 'Сыр Российский', price: '349 ₽', category: 'Молочные' },
-      { name: 'Яблоки 1кг', price: '129 ₽', category: 'Фрукты' },
-      { name: 'Бананы 1кг', price: '89 ₽', category: 'Фрукты' },
-      { name: 'Курица 1кг', price: '289 ₽', category: 'Мясо' },
-      { name: 'Макароны 500г', price: '79 ₽', category: 'Бакалея' },
-      { name: 'Масло сливочное', price: '159 ₽', category: 'Молочные' },
+      { name: 'Хлеб белый', price: 59, category: 'Хлеб' },
+      { name: 'Хлеб чёрный', price: 49, category: 'Хлеб' },
+      { name: 'Молоко 1л', price: 89, category: 'Молочные' },
+      { name: 'Кефир 1л', price: 79, category: 'Молочные' },
+      { name: 'Сыр Российский', price: 349, category: 'Молочные' },
+      { name: 'Яблоки 1кг', price: 129, category: 'Фрукты' },
+      { name: 'Бананы 1кг', price: 89, category: 'Фрукты' },
+      { name: 'Курица 1кг', price: 289, category: 'Мясо' },
+      { name: 'Макароны 500г', price: 79, category: 'Бакалея' },
+      { name: 'Масло сливочное', price: 159, category: 'Молочные' },
     ],
     filterBy: 'searchField',
   }, colSpan: 12, name: 'productTable' },
@@ -63,7 +63,7 @@ const kioskSearchComponents: FormComponent[] = [
   { id: id(), type: 'data-select', props: { label: 'Выберите товар', dataSource: 'products' }, colSpan: 8, name: 'productSelect' },
   { id: id(), type: 'button', props: { text: '✅ Добавить в корзину', variant: 'primary' }, colSpan: 4, name: 'addToCartBtn',
     actions: [
-      { targetName: 'productSelect', action: 'addToCart' as const, value: '' },
+      { targetName: 'cartItems', action: 'pushToList' as const, value: '{"name":"{{productSelect}}","price":{{productSelect_price}},"qty":1}' },
       { targetName: 'searchTitle', action: 'setText' as const, value: '🔍 Товар добавлен! Выберите ещё или закройте окно.' },
     ],
   },
@@ -77,7 +77,7 @@ const kioskPaymentComponents: FormComponent[] = [
   { id: id(), type: 'heading', props: { text: '💳 Оплата', level: 'h2' }, colSpan: 12, name: 'payTitle' },
   { id: id(), type: 'paragraph', props: { text: 'Выберите способ оплаты и завершите покупку.' }, colSpan: 12, name: 'paySubtitle' },
   { id: id(), type: 'divider', props: {}, colSpan: 12 },
-  { id: id(), type: 'heading', props: { text: '{{cartTotal}} ₽', level: 'h1' }, colSpan: 12, name: 'payTotal',
+  { id: id(), type: 'heading', props: { text: '{{totalSum}} ₽', level: 'h1' }, colSpan: 12, name: 'payTotal',
     style: { color: '#2dd4bf', fontSize: '36', fontSizeUnit: 'px' as const },
   },
   { id: id(), type: 'divider', props: {}, colSpan: 12 },
@@ -103,7 +103,7 @@ const kioskMainComponents: FormComponent[] = [
   { id: id(), type: 'heading', props: { text: '🛒 Касса самообслуживания', level: 'h1' }, colSpan: 8, name: 'kioskTitle',
     style: { fontSize: '24', fontSizeUnit: 'px' as const },
   },
-  { id: id(), type: 'heading', props: { text: '{{cartTotal}} ₽', level: 'h2' }, colSpan: 4, name: 'totalAmount',
+  { id: id(), type: 'heading', props: { text: '{{totalSum}} ₽', level: 'h2' }, colSpan: 4, name: 'totalAmount',
     style: { color: '#2dd4bf', fontSize: '28', fontSizeUnit: 'px' as const },
   },
   { id: id(), type: 'paragraph', props: { text: 'Добавьте товары и перейдите к оплате.' }, colSpan: 12, name: 'kioskStatus' },
@@ -114,7 +114,7 @@ const kioskMainComponents: FormComponent[] = [
   { id: id(), type: 'number-input', props: { label: 'Кол-во', placeholder: '1', min: 1, max: 99 }, colSpan: 2, name: 'qtyInput' },
   { id: id(), type: 'button', props: { text: '➕ Добавить', variant: 'primary' }, colSpan: 2, name: 'quickAddBtn',
     actions: [
-      { targetName: 'quickSelect', action: 'addToCart' as const, value: 'qtyInput' },
+      { targetName: 'cartItems', action: 'pushToList' as const, value: '{"name":"{{quickSelect}}","price":{{quickSelect_price}},"qty":{{qtyInput}}}' },
       { targetName: 'kioskStatus', action: 'setText' as const, value: '✅ Товар добавлен в корзину!' },
     ],
   },
@@ -133,10 +133,10 @@ const kioskMainComponents: FormComponent[] = [
       { key: 'name', label: 'Товар' },
       { key: 'price', label: 'Цена' },
       { key: 'qty', label: 'Кол-во' },
-      { key: 'total', label: 'Сумма' },
+      { key: 'total', label: 'Сумма', expression: 'price * qty' },
     ],
     rows: [],
-    dataSourceVar: 'cart',
+    dataSourceVar: 'cartItems',
   }, colSpan: 12, name: 'cartTable' },
 
   { id: id(), type: 'divider', props: {}, colSpan: 12 },
@@ -150,7 +150,7 @@ const kioskMainComponents: FormComponent[] = [
   },
   { id: id(), type: 'button', props: { text: '🗑 Очистить корзину', variant: 'secondary' }, colSpan: 3, name: 'clearCartBtn',
     actions: [
-      { targetName: '', action: 'clearCart' as const },
+      { targetName: 'cartItems', action: 'clearVariable' as const },
       { targetName: 'kioskStatus', action: 'setText' as const, value: 'Корзина очищена.' },
     ],
   },
@@ -161,7 +161,7 @@ const kioskMainComponents: FormComponent[] = [
   },
 ];
 
-export const templates: { name: string; description: string; icon: string; components: FormComponent[]; background?: { color?: string; image?: string } }[] = [
+export const templates: { name: string; description: string; icon: string; components: FormComponent[]; background?: { color?: string; image?: string }; computedVariables?: { name: string; expression: string }[] }[] = [
   {
     name: 'Анкета участника',
     description: 'Полная анкета с текстовыми полями, датой, списком из БД и горизонтальной раскладкой',
@@ -180,6 +180,10 @@ export const templates: { name: string; description: string; icon: string; compo
     icon: '🛒',
     components: kioskMainComponents,
     background: { color: '#111827' },
+    computedVariables: [
+      { name: 'totalSum', expression: 'sum(cartItems.price * cartItems.qty)' },
+      { name: 'itemCount', expression: 'count(cartItems)' },
+    ],
   },
   {
     name: 'Касса — Поиск товара',
@@ -205,6 +209,7 @@ export function createFormFromTemplate(template: typeof templates[0]): FormData 
     customJs: '',
     mode: 'visual',
     background: template.background,
+    computedVariables: template.computedVariables,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };

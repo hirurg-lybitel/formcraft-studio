@@ -32,24 +32,25 @@ function executeActions(actions: ComponentAction[], runtime: ReturnType<typeof u
       return;
     }
     if (act.action === 'setVariable' && runtime) {
-      runtime.setVariable(act.targetName, act.value || '');
+      // Value supports {{var}} interpolation
+      const resolved = runtime.interpolate(act.value || '');
+      runtime.setVariable(act.targetName, resolved);
       return;
     }
-    if (act.action === 'addToCart' && runtime) {
-      // targetName = name of the select component holding the product
-      const selectedLabel = runtime.getVariable(act.targetName);
-      if (!selectedLabel) return;
-      const qtyVar = act.value ? runtime.getVariable(act.value) : undefined;
-      const qty = parseInt(qtyVar, 10) || 1;
-      const price = parsePrice(selectedLabel);
-      const nameMatch = selectedLabel.match(/^(.+?)(?:\s*[—\-]\s*\d+)/);
-      const itemName = nameMatch ? nameMatch[1].trim() : selectedLabel;
-      runtime.addToCart({ name: itemName, price, priceLabel: `${price} ₽`, qty });
-      // Auto-update cartTotal variable for {{cartTotal}} interpolation
+    if (act.action === 'pushToList' && runtime) {
+      // value = JSON template with {{var}} interpolation
+      const jsonTemplate = act.value || '{}';
+      const interpolated = runtime.interpolate(jsonTemplate);
+      try {
+        const item = JSON.parse(interpolated);
+        runtime.pushToList(act.targetName, item);
+      } catch (e) {
+        console.warn('pushToList: invalid JSON after interpolation:', interpolated);
+      }
       return;
     }
-    if (act.action === 'clearCart' && runtime) {
-      runtime.clearCart();
+    if (act.action === 'clearVariable' && runtime) {
+      runtime.clearVariable(act.targetName);
       return;
     }
     const target = document.querySelector(`[data-name="${act.targetName}"]`) as HTMLElement;
@@ -75,12 +76,6 @@ function executeActions(actions: ComponentAction[], runtime: ReturnType<typeof u
         break;
     }
   });
-}
-
-/** Parse price like "59 ₽" or "Хлеб белый — 59₽" to number */
-function parsePrice(str: string): number {
-  const match = str.match(/(\d+)/);
-  return match ? parseInt(match[1], 10) : 0;
 }
 
 export function FormComponentRenderer({ component, interactive = false }: Props) {
@@ -235,7 +230,21 @@ function DataSelectRenderer({ name, props, style, interactive }: { name?: string
       <label className="text-sm font-medium text-foreground">{props.label}</label>
       <select
         disabled={!interactive}
-        onChange={interactive && runtime && name ? (e) => runtime.setVariable(name, e.target.value) : undefined}
+        onChange={interactive && runtime && name ? (e) => {
+          const selectedValue = e.target.value;
+          const selectedItem = items.find(i => i.value === selectedValue);
+          if (selectedItem) {
+            runtime.setVariable(name, selectedItem.label);
+            // Publish all extra fields as name_fieldKey
+            Object.entries(selectedItem).forEach(([key, val]) => {
+              if (key !== 'label' && key !== 'value') {
+                runtime.setVariable(`${name}_${key}`, val);
+              }
+            });
+          } else {
+            runtime.setVariable(name, selectedValue);
+          }
+        } : undefined}
         className="w-full px-3 py-2 rounded-md bg-secondary border border-border text-foreground text-sm
                    focus:outline-none focus:ring-2 focus:ring-ring"
       >
@@ -299,15 +308,26 @@ function TableRenderer({ component, interactive, inlineStyle }: { component: For
     }
   }
 
-  // If table has a dataSource of "cart", render from runtime cart
-  if (interactive && runtime && props.dataSourceVar === 'cart') {
-    rows = runtime.cart.map(item => ({
-      name: item.name,
-      price: item.priceLabel,
-      qty: item.qty,
-      total: `${item.price * item.qty} ₽`,
-    }));
+  // If table has a dataSourceVar, read rows from that variable (expects array)
+  if (interactive && runtime && props.dataSourceVar) {
+    const listData = runtime.getVariable(props.dataSourceVar);
+    if (Array.isArray(listData)) {
+      rows = listData;
+    } else {
+      rows = [];
+    }
   }
+
+  // Resolve cell value, supporting column expressions like "price * qty"
+  const getCellValue = (row: any, col: any) => {
+    if (col.expression) {
+      const parts = col.expression.split('*').map((s: string) => s.trim());
+      if (parts.length === 2) {
+        return (Number(row[parts[0]]) || 0) * (Number(row[parts[1]]) || 0);
+      }
+    }
+    return row[col.key] ?? '';
+  };
 
   return (
     <div data-name={name} className="overflow-auto" style={inlineStyle}>
@@ -323,7 +343,7 @@ function TableRenderer({ component, interactive, inlineStyle }: { component: For
           {rows.map((row: any, ri: number) => (
             <tr key={ri} className="hover:bg-secondary/50">
               {columns.map((col: any, ci: number) => (
-                <td key={ci} className="px-3 py-2 border border-border text-foreground">{row[col.key] ?? ''}</td>
+                <td key={ci} className="px-3 py-2 border border-border text-foreground">{getCellValue(row, col)}</td>
               ))}
             </tr>
           ))}
